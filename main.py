@@ -17,9 +17,6 @@ def pullArticles(lastHandled):
       break
   return d.entries[0].published_parsed
 
-#schedule = sched.scheduler(time.time, time.sleep)
-#schedule.enter(3600, 1, pullArticles(lastProcessedDate))
-
 print(time.asctime(lastProcessedDate))
 lastProcessedDate = pullArticles(lastProcessedDate)
 print(time.asctime(lastProcessedDate))
