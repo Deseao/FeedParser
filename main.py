@@ -1,27 +1,31 @@
 import feedparser
 import sched, time
 
-lastProcessedDate = time.strptime("Mon Jan 1 00:00:00 1970")
+updatePeriodSecondsMap = {
+  'hourly': 60 * 60,
+  'daily': 24 * 60 * 60,
+  'weekly': 7 * 24 * 60 * 60,
+  'monthly': 30 * 24 * 60 * 60,
+  'yearly': 365 * 24 * 60 * 60
+}
+scheduler = sched.scheduler(time.time, time.sleep)
 
 def pullArticles(lastHandled):
   d = feedparser.parse('https://engineering.fb.com/feed/')
   for post in d.entries:
-    posttime = post.published_parsed
-    # postDate = datetime.datetime(posttime.year, posttime.month, posttime.day, posttime.hour, posttime.minute, posttime.second)
-    if posttime > lastHandled:
-      #post is new
-      #call filter on it once that function exists
+    if post.published_parsed > lastHandled:
+      #call filter instead of printing title once that function exists
       print(post.title)
     else:
-      #post is old, we can break because the posts are sorted by time
       break
-  return d.entries[0].published_parsed
+  scheduleNextCheck(updatePeriodSecondsMap[d.feed.sy_updateperiod]/ int(d.feed.sy_updatefrequency), d.entries[0].published_parsed)
 
-print(time.asctime(lastProcessedDate))
-lastProcessedDate = pullArticles(lastProcessedDate)
-print(time.asctime(lastProcessedDate))
 
-# find <sy:updatePeriod>
-#d = feedparser.parse('https://engineering.fb.com/feed/')
-#print(d.feed.sy_updateperiod)
-#print(d.feed.sy_updatefrequency)
+def scheduleNextCheck(delay, lastHandled):
+  scheduler.enter(delay, 1, pullArticles(lastHandled))
+
+def start():
+  d = feedparser.parse('https://engineering.fb.com/feed/')
+  scheduleNextCheck(updatePeriodSecondsMap[d.feed.sy_updateperiod]/int(d.feed.sy_updatefrequency), time.strptime("Mon Jan 1 00:00:00 1970"))
+
+start()
